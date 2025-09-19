@@ -14,7 +14,16 @@ app.use(express.static(path.join(__dirname, '.')));
 
 // Add a route for the root URL to serve the HTML file
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'go-alac.html'));
+    // Log the path to help with debugging
+    const filePath = path.resolve(__dirname, 'go-alac.html');
+    console.log(`Looking for file at: ${filePath}`);
+
+    // Check if the file exists before sending
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('Go Alac web page not found.');
+    }
 });
 
 // Set up Multer for handling file uploads

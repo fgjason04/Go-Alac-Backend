@@ -12,6 +12,11 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.static(path.join(__dirname, '.')));
 
+// Add a route for the root URL to serve the HTML file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'go-alac.html'));
+});
+
 // Set up Multer for handling file uploads
 const upload = multer({ dest: 'uploads/' });
 

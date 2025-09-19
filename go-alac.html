@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Alac Incident Reporting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #d1fae5;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <div class="text-center">
+            <div class="bg-green-600 w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg">
+                <i class="fas fa-bullhorn text-white text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-green-800 mb-2">Go Alac</h1>
+            <p class="text-gray-600 mb-6">Report an emergency and help your community.</p>
+        </div>
+        
+        <form id="reportForm" class="space-y-4">
+            <div>
+                <label for="incidentType" class="block text-sm font-medium text-gray-700">Type of Incident</label>
+                <select id="incidentType" name="incidentType" required
+                    class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+                    <option value="">Select an incident type</option>
+                    <option value="Medical Emergency">Medical Emergency</option>
+                    <option value="Fire">Fire</option>
+                    <option value="Accident">Accident</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea id="description" name="description" rows="4" required
+                    class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm resize-none"></textarea>
+            </div>
+            
+            <div>
+                <label for="mediaUpload" class="block text-sm font-medium text-gray-700">Photos or Videos (optional)</label>
+                <input type="file" id="mediaUpload" name="mediaUpload" accept="image/*,video/*" multiple
+                    class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200" />
+            </div>
+
+            <div>
+                <button type="submit" id="submitButton"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                    Submit Report
+                </button>
+            </div>
+        </form>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="hidden mt-6 p-4 rounded-lg text-center font-medium" role="alert"></div>
+    </div>
+
+    <script>
+        // YOUR DEPLOYED BACKEND URL
+        const BACKEND_URL = 'https://go-alac-backend.onrender.com';
+
+        const form = document.getElementById('reportForm');
+        const messageBox = document.getElementById('messageBox');
+        const submitButton = document.getElementById('submitButton');
+        const formInputs = form.querySelectorAll('input, select, textarea, button');
+        
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // Show loading state and disable form
+            submitButton.textContent = 'Sending...';
+            submitButton.disabled = true;
+            submitButton.classList.add('bg-gray-400', 'hover:bg-gray-400', 'cursor-not-allowed');
+            formInputs.forEach(input => input.disabled = true);
+            messageBox.textContent = '';
+            messageBox.classList.add('hidden');
+            
+            // Explicitly create the FormData object and append values
+            const formData = new FormData();
+            formData.append('incidentType', document.getElementById('incidentType').value);
+            formData.append('description', document.getElementById('description').value);
+            const mediaFiles = document.getElementById('mediaUpload').files;
+            if (mediaFiles.length > 0) {
+                for (let i = 0; i < mediaFiles.length; i++) {
+                    formData.append('mediaUpload', mediaFiles[i]);
+                }
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/submit-report`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageBox.textContent = result.message;
+                    messageBox.classList.remove('hidden');
+                    messageBox.classList.remove('bg-red-100', 'text-red-800');
+                    messageBox.classList.add('bg-green-100', 'text-green-800');
+                    form.reset(); // Clear form on success
+                } else {
+                    throw new Error(result.error || 'Something went wrong.');
+                }
+            } catch (error) {
+                console.error('Error submitting report:', error);
+                messageBox.textContent = `Submission failed: ${error.message}`;
+                messageBox.classList.remove('hidden');
+                messageBox.classList.remove('bg-green-100', 'text-green-800');
+                messageBox.classList.add('bg-red-100', 'text-red-800');
+            } finally {
+                // Reset form state
+                submitButton.textContent = 'Submit Report';
+                submitButton.disabled = false;
+                submitButton.classList.remove('bg-gray-400', 'hover:bg-gray-400', 'cursor-not-allowed');
+                formInputs.forEach(input => input.disabled = false);
+            }
+        });
+    </script>
+</body>
+</html>
